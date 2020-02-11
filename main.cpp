@@ -2,9 +2,24 @@
 #include <fstream>
 #include <limits>
 #include <vector>
-#include <cctype>
+#include <chrono>
+#include <atomic>
 
-void print(std::vector<char> const &input)
+inline std::chrono::high_resolution_clock::time_point get_current_time_fenced()
+{
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    auto res_time = std::chrono::high_resolution_clock::now();
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    return res_time;
+}
+
+template<class D>
+inline long long to_us(const D& d)
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+}
+
+void print(std::string const &input)
 {
     for (int i = 0; i < input.size(); i++) {
         std::cout << input.at(i);
@@ -18,7 +33,7 @@ void file_is_opened(const std::fstream& in){
 }
 
 
-int num_not_ws(std::vector<char> const &container){
+int num_not_ws(std::string const &container){
     int num = 0;
     for (int i = 0; i < container.size(); ++i){
         if (!isspace(container.at(i))){
@@ -50,26 +65,33 @@ auto read_file_into_vector(std::fstream& in)
         throw std::ios_base::failure{"error"};
     }
 
-    std::vector<char> container(char_count);
+    std::string container;
+    container.resize(char_count);
 
     if (0 != container.size())
     {
         if (!in.read(&container[0], container.size())){
             throw std::ios_base::failure{"error"};
         }
-        std::cout << num_not_ws(container);
+        std::cout << num_not_ws(container) << std::endl;
     }
 
     return container;
 }
 
 int main() {
+
+
     std::fstream in;
-    in.open("test_small.txt", std::fstream::in);
+    in.open("test_file.txt", std::fstream::in);
 
-    std::vector<char> container = read_file_into_memory(in);
+    auto start = get_current_time_fenced();
 
+    std::string container = read_file_into_vector(in);
 
+    auto end = get_current_time_fenced();
+    auto total_time = end - start;
+    std::cout << to_us(total_time) << std::endl;
     in.close();
     return 0;
 }
