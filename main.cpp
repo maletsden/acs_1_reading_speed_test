@@ -1,20 +1,20 @@
 #include <iostream>
 #include <fstream>
-#include <limits>
 #include <chrono>
 #include <atomic>
 #include <cctype>
 #include <string>
+#include <limits>
 #include <sstream>
 
-void print(const std::string &input) {
-    for (char chr : input) {
-        std::cout << chr;
-    }
+#include "words_count.h"
+#include "file_readers.h"
 
-    std::cout << std::endl;
-}
 
+#define REQUIRED_ARGS_AMOUNT    4
+#define METHOD_TYPE_ARG         1
+#define IN_FILE_ARG             2
+#define OUT_FILE_ARG            3
 
 inline std::chrono::high_resolution_clock::time_point get_current_time_fenced() {
     std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -28,158 +28,103 @@ inline long long to_us(const D& d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-void print_deque_of_strings(const std::deque<std::string>& mydeque) {
-    for (auto & it : mydeque) {
-        print(it);
-    }
-}
-void file_is_opened(const std::fstream& in) {
-    if (!in.is_open()){
-        throw std::ios_base::failure{"Error. File is closed."};
-    }
-}
 
 
-
-uint64_t num_not_ws(const std::string &container){
-    uint64_t num = 0;
-    for (char chr : container) {
-        if (!isspace(chr)) {
-            ++num;
-        }
-    }
-    return num;
-}
-
-uint64_t num_not_ws_in_deque(const std::deque<std::string>& mydeque){
-    uint64_t num = 0;
-    for (auto & it : mydeque) {
-        num += num_not_ws(it);
-    }
-    return num;
-}
-
-
-
-
-std::string read_stream_into_string(const std::fstream& in) {
-    file_is_opened(in);
-
-    std::ostringstream ss;
-
-    if (!(ss << in.rdbuf()))
-        throw std::ios_base::failure{"error"};
-
-    return ss.str();
-}
-
-std::deque<std::string> read_file_into_deque(std::fstream& in) {
-    file_is_opened(in);
-
-    auto const chunk_size = std::size_t{BUFSIZ};
-
-    std::deque<std::string> container;
-
-    std::string chunk;
-    chunk.resize(chunk_size);
-
-    while (
-        in.read(&chunk[0], chunk_size) ||
-        in.gcount()
-    ) {
-        if (in.gcount() != chunk_size) {
-            chunk.resize(in.gcount());
-        }
-
-        container.insert(
-            end(container),
-            chunk
-        );
-
-        if (in.gcount() != chunk_size) {
-            chunk.resize(chunk_size);
-        }
-    }
-    return container;
-}
-
-auto read_file_into_vector(std::fstream& in) {
-    file_is_opened(in);
-
-    auto const start_pos = in.tellg();
-    if (std::streamsize(-1) == start_pos) {
-        throw std::ios_base::failure{"error"};
+int main(int argc, char** argv) {
+    if (argc != REQUIRED_ARGS_AMOUNT) {
+        throw std::ios_base::failure{"Wrong amount of arguments (expected - 4)."};
     }
 
-    if (!in.ignore(std::numeric_limits<std::streamsize>::max())) {
-        throw std::ios_base::failure{"error"};
-    }
-
-    auto const char_count = in.gcount();
-
-    if (!in.seekg(start_pos)){
-        throw std::ios_base::failure{"error"};
-    }
-
-    std::string container;
-    container.resize(char_count);
-
-    if (!container.empty()) {
-        if (!in.read(&container[0], container.size())) {
-            throw std::ios_base::failure{"error"};
-        }
-    }
-
-    return container;
-}
-
-int main() {
-    std::fstream in;
-    in.open("test_file.txt", std::fstream::in);
-
-    auto start = get_current_time_fenced();
-
-    // First method
-    std::string s = read_stream_into_string(in);
-
-    auto first_end = get_current_time_fenced();
-
-    // return file pointer to the beginning
-    in.seekg (0, std::fstream::beg);
-
-    auto second_start = get_current_time_fenced();
-
-    // Second method
-    std::string container = read_file_into_vector(in);
-
-    auto second_end = get_current_time_fenced();
-
-    // return file pointer to the beginning
-    in.seekg (0, std::fstream::beg);
-
-    auto third_start = get_current_time_fenced();
-
-    // Third method
-    std::deque<std::string> mydeque = read_file_into_deque(in);
-
-    auto third_end = get_current_time_fenced();
-
-    auto amount_of_nonwchars = num_not_ws(s);
-
-    // check method results
     if (
-        amount_of_nonwchars != num_not_ws(container) ||
-        amount_of_nonwchars != num_not_ws_in_deque(mydeque)
+        strlen(argv[METHOD_TYPE_ARG])  != 1 &&
+        !isdigit(argv[METHOD_TYPE_ARG][0])
     ) {
-        throw std::ios_base::failure{"Methods results aren't equal."};
+        throw std::ios_base::failure{
+            "No supported method with selected type."
+        };
     }
 
-    std::cout << "Amount of non-whitespaces chars in file: " << amount_of_nonwchars << std::endl << std::endl;
+    std::fstream in;
+    in.open(argv[IN_FILE_ARG], std::fstream::in);
 
-    std::cout << "First  method (in us): " << to_us(first_end - start) << std::endl;
-    std::cout << "Second method (in us): " << to_us(second_end - second_start) << std::endl;
-    std::cout << "Third  method (in us): " << to_us(third_end - third_start) << std::endl;
+    // check existence of input file
+    if (!in.is_open()){
+        throw std::ios_base::failure{
+            "Selected file is closed or doesn't exist."
+        };
+    }
+
+    std::cout << "Reading the entire file into a memory using method of ";
+
+    uint64_t amount_of_non_wspases = 0;
+    std::chrono::high_resolution_clock::time_point start, end;
+
+    switch (std::stoi(argv[METHOD_TYPE_ARG])) {
+        case 1: {
+            std::cout << "reading stream into string (in us): ";
+
+            start = get_current_time_fenced();
+            auto container = read_stream_into_string(in);
+            amount_of_non_wspases = num_not_ws(container);
+
+            break;
+        }
+
+        case 2: {
+            std::cout << "reading chunks of file into deque (in us): ";
+
+            start = get_current_time_fenced();
+            auto container = read_file_into_deque(in);
+            amount_of_non_wspases = num_not_ws(container);
+
+            break;
+        }
+
+        case 3: {
+            std::cout << "'ignoring' file and reading all of it afterwards (in us): ";
+
+            start = get_current_time_fenced();
+            auto container = read_file_into_string(in);
+            amount_of_non_wspases = num_not_ws(container);
+
+            break;
+        }
+    }
+
+    end = get_current_time_fenced();
+
+    std::cout << std::endl;
+
+    // print time of operation
+    std::cout << to_us(end - start) << std::endl;
+
     in.close();
+
+    // save results
+    std::fstream out;
+
+    out.open(argv[OUT_FILE_ARG], std::fstream::out);
+
+    out << "There were read " << amount_of_non_wspases << " of non-whitespace characters from file: " <<
+        argv[IN_FILE_ARG] << std::endl;
+
+    out.close();
+
     return 0;
 }
+
+
+//void print(const std::string &input) {
+//    for (char chr : input) {
+//        std::cout << chr;
+//    }
+//
+//    std::cout << std::endl;
+//}
+//void print_deque_of_strings(const std::deque<std::string>& mydeque) {
+//    for (auto & it : mydeque) {
+//        print(it);
+//    }
+//}
+//
 
