@@ -45,7 +45,7 @@ int num_not_ws(std::string const &container){
 }
 
 
-auto read_file_into_vector(std::fstream& in)
+auto read_file_into_string(std::fstream& in)
 {
 
     file_is_opened(in);
@@ -73,7 +73,7 @@ auto read_file_into_vector(std::fstream& in)
         if (!in.read(&container[0], container.size())){
             throw std::ios_base::failure{"error"};
         }
-        std::cout << num_not_ws(container) << std::endl;
+
     }
 
     return container;
@@ -87,7 +87,8 @@ int main() {
 
     auto start = get_current_time_fenced();
 
-    std::string container = read_file_into_vector(in);
+    std::string container = read_file_into_string(in);
+    std::cout << num_not_ws(container) << std::endl;
 
     auto end = get_current_time_fenced();
     auto total_time = end - start;
