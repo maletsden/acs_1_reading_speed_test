@@ -27,17 +27,17 @@ inline long long to_us(const D& d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-#define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
-#define PBWIDTH 60
+#define PBSTR       "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+#define PBWIDTH     60
 
-void printProgress (double percentage)
-{
+void printProgress (double percentage) {
     int val = (int) (percentage * 100);
     int lpad = (int) (percentage * PBWIDTH);
     int rpad = PBWIDTH - lpad;
-    printf ("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
-    fflush (stdout);
+    printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+    fflush(stdout);
 }
+
 int main(int argc, char** argv) {
     if (argc != REQUIRED_ARGS_AMOUNT) {
         throw std::ios_base::failure{"Wrong amount of arguments (expected - 4)."};
@@ -66,8 +66,7 @@ int main(int argc, char** argv) {
         };
     }
 
-
-
+    
     uint64_t num_of_non_spaces, read_num_of_non_spaces;
     std::chrono::high_resolution_clock::time_point start, end;
     std::string s_container;
@@ -85,8 +84,6 @@ int main(int argc, char** argv) {
     in.clear();
     in.seekg (0, std::fstream::beg);
 
-
-    // just for visualization of loading procces
 
     // run experiments
     for (int i = 0; i < num_of_experiments; ++i) {
