@@ -232,10 +232,10 @@ int main(int argc, char** argv) {
     fflush(stdout);
 
 
-    std::cout << "Stream into string:                  " << exp1_time << std::endl;
-    std::cout << "Ignoring/reading:                    " << exp2_time << std::endl;
-    std::cout << "Char by char into string:            " << exp3_time << std::endl;
-    std::cout << "Reading using file iterator:         " << exp4_time << std::endl;
+    std::cout << "Stream into string:                  " << exp3_time << std::endl;
+    std::cout << "Ignoring/reading:                    " << exp4_time << std::endl;
+    std::cout << "Char by char into string:            " << exp1_time << std::endl;
+    std::cout << "Reading using file iterator:         " << exp2_time << std::endl;
     std::cout << "Chunks into deque:                   " << exp5_time << std::endl;
     std::cout << "Ignoring/reading (count by regex):   " << exp6_time << std::endl;
     std::cout << "Ignoring/reading (count by split):   " << exp7_time << std::endl;
