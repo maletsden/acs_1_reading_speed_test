@@ -4,8 +4,7 @@
 #include <atomic>
 #include <cctype>
 #include <string>
-#include <limits>
-#include <sstream>
+#include <cstring>
 
 #include "words_count.h"
 #include "file_readers.h"
@@ -84,8 +83,16 @@ int main(int argc, char** argv) {
             std::cout << "'ignoring' file and reading all of it afterwards (in us): ";
 
             start = get_current_time_fenced();
-            auto container = read_file_into_string(in);
+            auto container = read_file_ignore(in);
             amount_of_non_wspases = num_not_ws(container);
+
+            break;
+        }
+        case 4: {
+            std::cout << "reading file char by char and appending to string (in us): ";
+
+            start = get_current_time_fenced();
+            amount_of_non_wspases  = read_file_into_string(in);
 
             break;
         }
@@ -113,17 +120,3 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-
-//void print(const std::string &input) {
-//    for (char chr : input) {
-//        std::cout << chr;
-//    }
-//
-//    std::cout << std::endl;
-//}
-//void print_deque_of_strings(const std::deque<std::string>& mydeque) {
-//    for (auto & it : mydeque) {
-//        print(it);
-//    }
-//}
-//

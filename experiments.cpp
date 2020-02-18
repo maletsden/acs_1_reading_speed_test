@@ -6,6 +6,7 @@
 #include <string>
 #include <limits>
 #include <sstream>
+#include <climits>
 
 #include "file_readers.h"
 #include "words_count.h"
@@ -73,7 +74,10 @@ int main(int argc, char** argv) {
     std::deque<std::string> d_container;
     long long exp1_time = LLONG_MAX,
             exp2_time = LLONG_MAX,
-            exp3_time = LLONG_MAX;
+            exp3_time = LLONG_MAX,
+            exp4_time = LLONG_MAX;
+
+
 
     // first read for future checking equivalence of results
     num_of_non_spaces = num_not_ws(
@@ -132,15 +136,33 @@ int main(int argc, char** argv) {
         // Third method
 
         start = get_current_time_fenced();
-        s_container = read_file_into_string(in);
+        s_container = read_file_ignore(in);
         read_num_of_non_spaces = num_not_ws(s_container);
         if (read_num_of_non_spaces != num_of_non_spaces) {
+
             throw std::ios_base::failure{
                 "Experiments gave different results."
             };
         }
         end = get_current_time_fenced();
         exp3_time = std::min(exp3_time, to_us(end - start));
+
+        // return file pointer to the beginning
+        in.clear();
+        in.seekg (0, std::fstream::beg);
+
+        // Fourth method
+
+        start = get_current_time_fenced();
+        read_num_of_non_spaces  = read_file_into_string(in);
+        if (read_num_of_non_spaces != num_of_non_spaces) {
+
+            throw std::ios_base::failure{
+                    "Experiments gave different results."
+            };
+        }
+        end = get_current_time_fenced();
+        exp4_time = std::min(exp4_time, to_us(end - start));
 
         // return file pointer to the beginning
         in.clear();
@@ -160,6 +182,8 @@ int main(int argc, char** argv) {
     std::cout << "Stream into string: " << exp1_time << std::endl;
     std::cout << "Chunks into deque:  " << exp2_time << std::endl;
     std::cout << "Ignoring/reading:   " << exp3_time << std::endl;
+    std::cout << "Char by char into string:   " << exp4_time << std::endl;
+
 
     std::cout << "\r\nAll results are the same." << std::endl;
 

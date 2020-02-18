@@ -1,7 +1,24 @@
 #include "file_readers.h"
 
 
-std::string read_stream_into_string(const std::fstream& in) {
+uint64_t read_file_into_string(std::fstream& in){
+    std::string s;
+    char c;
+    uint64_t num_c = 0;
+    while( in >> std::noskipws >> c ){
+        if (!isspace(c)){
+            num_c++;
+        }
+        s.push_back(c);
+    }
+
+    s.erase();
+
+    // returning the number of non-whitespaces
+    return num_c;
+}
+
+std::string read_stream_into_string(std::fstream& in) {
     std::ostringstream ss;
 
     if (!(ss << in.rdbuf()))
@@ -30,7 +47,7 @@ std::deque<std::string> read_file_into_deque(std::fstream& in) {
     return container;
 }
 
-std::string read_file_into_string(std::fstream& in) {
+std::string read_file_ignore(std::fstream& in) {
     auto const start_pos = in.tellg();
     if (std::streamsize(-1) == start_pos) {
         throw std::ios_base::failure{"error1"};

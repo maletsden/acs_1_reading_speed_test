@@ -1,3 +1,0 @@
-/Users/denysmaletsden/Desktop/acs_1_reading_speed_test/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/denysmaletsden/Desktop/acs_1_reading_speed_test/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/denysmaletsden/Desktop/acs_1_reading_speed_test/cmake-build-debug/CMakeFiles/acs_1_reading_speed_test.dir
