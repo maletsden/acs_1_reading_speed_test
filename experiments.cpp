@@ -16,6 +16,8 @@
 #define IN_FILE_ARG             2
 #define OUT_FILE_ARG            3
 
+#define NUM_OF_METHODS          7
+
 inline std::chrono::high_resolution_clock::time_point get_current_time_fenced() {
     std::atomic_thread_fence(std::memory_order_seq_cst);
     auto res_time = std::chrono::high_resolution_clock::now();
@@ -37,6 +39,28 @@ void printProgress (double percentage) {
     int rpad = PBWIDTH - lpad;
     printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
     fflush(stdout);
+}
+
+
+typedef std::string (*fileReadersPointer)(std::fstream&);
+std::chrono::high_resolution_clock::time_point start, end;
+
+long long run_method(std::fstream& in, fileReadersPointer func, uint64_t expected_number) {
+    start = get_current_time_fenced();
+    std::string s_container = read_stream_into_string(in);
+    if (num_not_ws(s_container) != expected_number) {
+        throw std::ios_base::failure{
+                "Experiments gave different results."
+        };
+    }
+
+    end = get_current_time_fenced();
+
+    // return file pointer to the beginning
+    in.clear();
+    in.seekg (0, std::fstream::beg);
+
+    return to_us(end - start);
 }
 
 int main(int argc, char** argv) {
@@ -61,7 +85,8 @@ int main(int argc, char** argv) {
     in.open(argv[IN_FILE_ARG], std::fstream::in);
 
     // check existence of input file
-    if (!in.is_open()){
+    if (!in.is_open()) {
+        std::cout << argv[IN_FILE_ARG] << std::endl;
         throw std::ios_base::failure{
                 "Selected file is closed or doesn't exist."
         };
@@ -69,13 +94,15 @@ int main(int argc, char** argv) {
 
     
     uint64_t num_of_non_spaces, read_num_of_non_spaces;
-    std::chrono::high_resolution_clock::time_point start, end;
     std::string s_container;
     std::deque<std::string> d_container;
     long long exp1_time = LLONG_MAX,
             exp2_time = LLONG_MAX,
             exp3_time = LLONG_MAX,
-            exp4_time = LLONG_MAX;
+            exp4_time = LLONG_MAX,
+            exp5_time = LLONG_MAX,
+            exp6_time = LLONG_MAX,
+            exp7_time = LLONG_MAX;
 
 
 
@@ -89,80 +116,104 @@ int main(int argc, char** argv) {
     in.seekg (0, std::fstream::beg);
 
 
+    fileReadersPointer functionPointers[] = {
+            read_file_into_string,
+            read_file_into_string_by_file_iter,
+            read_stream_into_string,
+            read_file_ignore
+    };
+
     // run experiments
     for (int i = 0; i < num_of_experiments; ++i) {
         // print loading status
-        printProgress(((double) i ) / num_of_experiments);
-
+        printProgress(((double) i * NUM_OF_METHODS ) / (num_of_experiments * NUM_OF_METHODS));
 
         // First method
+        exp1_time = std::min(
+                exp1_time,
+                run_method(in, functionPointers[0], num_of_non_spaces)
+        );
 
-        start = get_current_time_fenced();
-        s_container = read_stream_into_string(in);
-        read_num_of_non_spaces = num_not_ws(s_container);
-        if (read_num_of_non_spaces != num_of_non_spaces) {
-            throw std::ios_base::failure{
-                "Experiments gave different results."
-            };
-        }
-        end = get_current_time_fenced();
-        exp1_time = std::min(exp1_time, to_us(end - start));
-
-        // return file pointer to the beginning
-        in.clear();
-        in.seekg (0, std::fstream::beg);
-
-
+        // print loading status
+        printProgress(((double) i * NUM_OF_METHODS  + 1) / (num_of_experiments * NUM_OF_METHODS));
 
         // Second method
+        exp2_time = std::min(
+                exp2_time,
+                run_method(in, functionPointers[1], num_of_non_spaces)
+        );
 
-        start = get_current_time_fenced();
-        d_container = read_file_into_deque(in);
-        read_num_of_non_spaces = num_not_ws(d_container);
-        if (read_num_of_non_spaces != num_of_non_spaces) {
-            throw std::ios_base::failure{
-                "Experiments gave different results."
-            };
-        }
-        end = get_current_time_fenced();
-        exp2_time = std::min(exp2_time, to_us(end - start));
-
-        // return file pointer to the beginning
-        in.clear();
-        in.seekg (0, std::fstream::beg);
-
-
+        // print loading status
+        printProgress(((double) i * NUM_OF_METHODS  + 2) / (num_of_experiments * NUM_OF_METHODS));
 
         // Third method
+        exp3_time = std::min(
+                exp3_time,
+                run_method(in, functionPointers[2], num_of_non_spaces)
+        );
 
+        // print loading status
+        printProgress(((double) i * NUM_OF_METHODS  + 3) / (num_of_experiments * NUM_OF_METHODS));
+
+        // Forth method
+        exp4_time = std::min(
+                exp4_time,
+                run_method(in, functionPointers[3], num_of_non_spaces)
+        );
+
+        // print loading status
+        printProgress(((double) i * NUM_OF_METHODS  + 4) / (num_of_experiments * NUM_OF_METHODS));
+
+        // Fifth method
         start = get_current_time_fenced();
-        s_container = read_file_ignore(in);
-        read_num_of_non_spaces = num_not_ws(s_container);
-        if (read_num_of_non_spaces != num_of_non_spaces) {
-
-            throw std::ios_base::failure{
-                "Experiments gave different results."
-            };
-        }
-        end = get_current_time_fenced();
-        exp3_time = std::min(exp3_time, to_us(end - start));
-
-        // return file pointer to the beginning
-        in.clear();
-        in.seekg (0, std::fstream::beg);
-
-        // Fourth method
-
-        start = get_current_time_fenced();
-        read_num_of_non_spaces  = read_file_into_string(in);
-        if (read_num_of_non_spaces != num_of_non_spaces) {
-
+        d_container = read_file_into_deque(in);
+        if (num_not_ws(d_container) != num_of_non_spaces) {
             throw std::ios_base::failure{
                     "Experiments gave different results."
             };
         }
         end = get_current_time_fenced();
-        exp4_time = std::min(exp4_time, to_us(end - start));
+        exp5_time = std::min(exp5_time, to_us(end - start));
+
+        // return file pointer to the beginning
+        in.clear();
+        in.seekg (0, std::fstream::beg);
+
+
+        // print loading status
+        printProgress(((double) i * NUM_OF_METHODS  + 5) / (num_of_experiments * NUM_OF_METHODS));
+
+        // Sixth method
+
+        start = get_current_time_fenced();
+        s_container = read_file_ignore(in);
+        if (num_not_ws_regex(s_container) != num_of_non_spaces) {
+            throw std::ios_base::failure{
+                    "Experiments gave different results."
+            };
+        }
+        end = get_current_time_fenced();
+        exp6_time = std::min(exp6_time, to_us(end - start));
+
+        // return file pointer to the beginning
+        in.clear();
+        in.seekg (0, std::fstream::beg);
+
+        // print loading status
+        printProgress(((double) i * NUM_OF_METHODS  + 6) / (num_of_experiments * NUM_OF_METHODS));
+
+
+        // Seventh method
+
+        start = get_current_time_fenced();
+        s_container = read_file_ignore(in);
+        if (num_not_ws_split(s_container) != num_of_non_spaces) {
+            throw std::ios_base::failure{
+                    "Experiments gave different results."
+            };
+        }
+        end = get_current_time_fenced();
+        exp7_time = std::min(exp7_time, to_us(end - start));
 
         // return file pointer to the beginning
         in.clear();
@@ -172,6 +223,8 @@ int main(int argc, char** argv) {
     // print loading status
     printProgress(1.0);
 
+    s_container.clear();
+    d_container.clear();
     in.close();
 
     // print results
@@ -179,10 +232,13 @@ int main(int argc, char** argv) {
     fflush(stdout);
 
 
-    std::cout << "Stream into string: " << exp1_time << std::endl;
-    std::cout << "Chunks into deque:  " << exp2_time << std::endl;
-    std::cout << "Ignoring/reading:   " << exp3_time << std::endl;
-    std::cout << "Char by char into string:   " << exp4_time << std::endl;
+    std::cout << "Stream into string:                  " << exp1_time << std::endl;
+    std::cout << "Ignoring/reading:                    " << exp2_time << std::endl;
+    std::cout << "Char by char into string:            " << exp3_time << std::endl;
+    std::cout << "Reading using file iterator:         " << exp4_time << std::endl;
+    std::cout << "Chunks into deque:                   " << exp5_time << std::endl;
+    std::cout << "Ignoring/reading (count by regex):   " << exp6_time << std::endl;
+    std::cout << "Ignoring/reading (count by split):   " << exp7_time << std::endl;
 
 
     std::cout << "\r\nAll results are the same." << std::endl;

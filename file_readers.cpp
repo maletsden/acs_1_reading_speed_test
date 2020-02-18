@@ -1,21 +1,22 @@
 #include "file_readers.h"
 
 
-uint64_t read_file_into_string(std::fstream& in){
+std::string read_file_into_string(std::fstream& in) {
     std::string s;
     char c;
-    uint64_t num_c = 0;
-    while( in >> std::noskipws >> c ){
-        if (!isspace(c)){
-            num_c++;
-        }
+
+    while( in >> std::noskipws >> c )
         s.push_back(c);
-    }
 
-    s.erase();
+    return s;
+}
 
-    // returning the number of non-whitespaces
-    return num_c;
+std::string read_file_into_string_by_file_iter(std::fstream& in) {
+    // Bad code: slow
+    std::string s = std::string{
+            std::istreambuf_iterator<char>{in},
+            std::istreambuf_iterator<char>{}};
+    return s;
 }
 
 std::string read_stream_into_string(std::fstream& in) {
@@ -36,9 +37,9 @@ std::deque<std::string> read_file_into_deque(std::fstream& in) {
     chunk.resize(chunk_size);
 
     while (
-            in.read(&chunk[0], chunk_size) ||
-            in.gcount()
-            )
+        in.read(&chunk[0], chunk_size) ||
+        in.gcount()
+    )
         container.insert(
                 end(container),
                 in.gcount() != chunk_size ? chunk.substr(0, in.gcount()) : chunk

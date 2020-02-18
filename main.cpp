@@ -31,13 +31,15 @@ inline long long to_us(const D& d) {
 
 int main(int argc, char** argv) {
     if (argc != REQUIRED_ARGS_AMOUNT) {
-        throw std::ios_base::failure{"Wrong amount of arguments (expected - 4)."};
+        std::ostringstream msg;
+        msg << "Wrong amount of arguments (expected - " << REQUIRED_ARGS_AMOUNT << ").";
+        throw std::ios_base::failure{msg.str()};
     }
 
     if (
-            strlen(argv[METHOD_TYPE_ARG])  != 1 &&
-            !isdigit(argv[METHOD_TYPE_ARG][0])
-            ) {
+        strlen(argv[METHOD_TYPE_ARG])  != 1 &&
+        !isdigit(argv[METHOD_TYPE_ARG][0])
+    ) {
         throw std::ios_base::failure{
                 "No supported method with selected type."
         };
@@ -47,7 +49,7 @@ int main(int argc, char** argv) {
     in.open(argv[IN_FILE_ARG], std::fstream::in);
 
     // check existence of input file
-    if (!in.is_open()){
+    if (!in.is_open()) {
         throw std::ios_base::failure{
                 "Selected file is closed or doesn't exist."
         };
@@ -92,7 +94,8 @@ int main(int argc, char** argv) {
             std::cout << "reading file char by char and appending to string (in us): ";
 
             start = get_current_time_fenced();
-            amount_of_non_wspases  = read_file_into_string(in);
+            auto container = read_file_into_string(in);
+            amount_of_non_wspases = num_not_ws(container);
 
             break;
         }
